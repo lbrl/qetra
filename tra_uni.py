@@ -27,6 +27,8 @@ class Tra:
         self.gg = []
         self.xx = []
         self.yy = []
+        self.xmin = 0.
+        self.xmax = 0.
         self.colours = [r.kRed, r.kBlue, r.kGreen+2,
                r.kViolet, r.kCyan, r.kMagenta,
                 r.kYellow+2, r.kOrange+7]
@@ -86,16 +88,36 @@ class Tra:
         return 0
 
     def calcTra(self):
-        x, y = [], []
+        #
+        # print 'xx', self.xx
+        xmin = [min(x) for x in self.xx]
+        xmax = [max(x) for x in self.xx]
+        self.xmin = max(xmin)
+        self.xmax = min(xmax)
+        # self.xmin = max([min(x) for x in self.xx])
+        # self.xmax = min([max(x) for x in self.xx])
+        print 'max min x', xmin, self.xmin
+        print 'min max x', xmax, self.xmax
+        #
         # for i, xcsi in enumerate(xcsitl):
+        # for i, xcsi in enumerate(self.xx[self.initInd]):
+        x, y = [], []
         for i, xcsi in enumerate(self.xx[self.initInd]):
+            if xcsi < self.xmin:
+                continue
+            if xcsi > self.xmax:
+                continue
+            print '%.2f < %.2f < %.2f' % (self.xmin, xcsi, self.xmax)
             ytmp = self.gg[0].Eval(xcsi)
             for g in self.gg[1:]:
                 ytmp *= g.Eval(xcsi)
             # ytmp = ycsitl[i] * glens.Eval(xcsi) * gpco.Eval(xcsi) * gicf114.Eval(xcsi)
-            if ytmp >= 0. :
+            if ytmp >= 0.:
+                print xcsi, ytmp
                 x.append( xcsi )
                 y.append( ytmp )
+        for i, xx in enumerate(x):
+            print xx, y[i]
         gtra = r.TGraph(len(x), np.array(x), np.array(y))
         gtra.SetName('traeff')
         # gtra.SetTitle('transmission efficiency')
@@ -104,7 +126,7 @@ class Tra:
         gtra.SetLineColor(r.kBlack)
         gtra.SetLineWidth(2)
         #
-        htot = r.TH1F('htot', 'htot', int(x[-1]-x[0]), x[0], x[-1]+1)
+        htot = r.TH1F('htot', 'htot', int(max(x)-min(x)), min(x), max(x)+1)
         for i in xrange( int(x[-1]-x[0]) ):
             htot.SetBinContent(i+1, gtra.Eval(htot.GetBinCenter(i+1)))
         integ_tot = htot.Integral()
