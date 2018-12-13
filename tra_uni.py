@@ -23,7 +23,7 @@ class Tra:
         self.names = []
         self.titles = []
         self.ks = []
-        self.initInd = 0
+        self.initInd = -1
         self.traeff = -1.
         self.gg = []
         self.xx = []
@@ -41,26 +41,24 @@ class Tra:
         self.ks.append(k)
         if isInit:
             self.initInd = self.n
-        if tipo != 'qe':
-            if tipo == 'radsens':
-                if 'yunuo' == 'mA/W':
-                    yunit = 1.e-3
-                elif 'yunuo' == 'A/W':
-                    yunit = 1.
-                else:
-                    print "Can't recognise units."
-                    raise SystemError
-                    return 1
+        if tipo == 'radsens':
+            if 'yunuo' == 'mA/W':
+                yunit = 1.e-3
+            elif 'yunuo' == 'A/W':
+                yunit = 1.
             else:
-                print "Can't recognise the type."
+                print "Can't recognise units."
                 raise SystemError
                 return 1
-        self.addGr(self.n)
+        if tipo == 'emission':
+            self.addGr(self.n, tipo)
+        else:
+            self.addGr(self.n)
         self.n += 1
         return 0
 
     # def getGr(self, f, name, k=1., colour=r.kRed, isProbability=False):
-    def addGr(self, i):
+    def addGr(self, i, tipo=False):
         f = open(self.fnames[i])
         name = self.names[i]
         title = self.titles[i]
@@ -90,7 +88,11 @@ class Tra:
             print 'The area under the curve (integral) : ', integ
         else:
             integ = 1.
-        gr = r.TGraph(len(x), np.array(x), np.array(y)/integ)
+        if tipo == 'emission':
+            ymax = max(y)*3
+            gr = r.TGraph(len(x), np.array(x), np.array(y)/ymax)
+        else:
+            gr = r.TGraph(len(x), np.array(x), np.array(y)/integ)
         gr.SetName(name)
         # gr.SetTitle(title)
         gr.SetTitle('')
@@ -162,11 +164,14 @@ class Tra:
     def getTotalEff(self):
         return self.traeff
 
-    def draw(self, foutname='none'):
+    def draw(self, foutname='none', logy=1, print_qe=True, ymax=2.):
         c1 = r.TCanvas('c1', 'c1', 600, 600)
-        c1.SetLogy()
+        c1.SetLogy( logy )
         self.gg[0].Draw('al')
-        self.gg[0].GetYaxis().SetRangeUser(min(self.yy[-1])/2., 2.)
+        if logy:
+            self.gg[0].GetYaxis().SetRangeUser(min(self.yy[-1])/2., 2.)
+        else:
+            self.gg[0].GetYaxis().SetRangeUser(0, ymax)
         self.gg[0].GetYaxis().SetTitleOffset(1.2)
         self.gg[0].GetYaxis().SetTitle('Efficiency')
         self.gg[0].GetXaxis().SetTitle('Wave length, nm')
@@ -180,7 +185,8 @@ class Tra:
         lat = r.TLatex()
         lat.SetTextFont(12)
         lat.SetTextSize(.04)
-        lat.DrawLatexNDC(.4, .2, 'Detection efficiency is %.2f%%.' % (100*self.traeff))
+        if print_qe:
+            lat.DrawLatexNDC(.4, .2, 'Detection efficiency is %.2f%%.' % (100*self.traeff))
         c1.Update()
         raw_input('Press ENTER to continue, please.')
         if foutname != 'none':
