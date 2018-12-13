@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # import os
 import ROOT as r
@@ -33,13 +34,27 @@ class Tra:
                r.kViolet, r.kCyan, r.kMagenta,
                 r.kYellow+2, r.kOrange+7]
 
-    def add(self, fname, name='nonomo', title='notitolo', k=1., isInit=False):
+    def add(self, fname, name='nonomo', title='notitolo', k=1., isInit=False, tipo='qe', yunuo='1'):
         self.fnames.append(fname)
         self.names.append(name)
         self.titles.append(title)
         self.ks.append(k)
         if isInit:
             self.initInd = self.n
+        if tipo != 'qe':
+            if tipo == 'radsens':
+                if 'yunuo' == 'mA/W':
+                    yunit = 1.e-3
+                elif 'yunuo' == 'A/W':
+                    yunit = 1.
+                else:
+                    print "Can't recognise units."
+                    raise SystemError
+                    return 1
+            else:
+                print "Can't recognise the type."
+                raise SystemError
+                return 1
         self.addGr(self.n)
         self.n += 1
         return 0
@@ -72,7 +87,7 @@ class Tra:
             for i in xrange( int(x[-1]-x[0])):
                 hgr.SetBinContent(i+1, gr_tmp.Eval(hgr.GetBinCenter(i+1)))
             integ = hgr.Integral()
-            print 'integral', integ
+            print 'The area under the curve (integral) : ', integ
         else:
             integ = 1.
         gr = r.TGraph(len(x), np.array(x), np.array(y)/integ)
@@ -107,17 +122,17 @@ class Tra:
                 continue
             if xcsi > self.xmax:
                 continue
-            print '%.2f < %.2f < %.2f' % (self.xmin, xcsi, self.xmax)
+            # print '%.2f < %.2f < %.2f' % (self.xmin, xcsi, self.xmax)
             ytmp = self.gg[0].Eval(xcsi)
             for g in self.gg[1:]:
                 ytmp *= g.Eval(xcsi)
             # ytmp = ycsitl[i] * glens.Eval(xcsi) * gpco.Eval(xcsi) * gicf114.Eval(xcsi)
             if ytmp >= 0.:
-                print xcsi, ytmp
+                # print xcsi, ytmp
                 x.append( xcsi )
                 y.append( ytmp )
-        for i, xx in enumerate(x):
-            print xx, y[i]
+        # for i, xx in enumerate(x):
+        #   print xx, y[i]
         gtra = r.TGraph(len(x), np.array(x), np.array(y))
         gtra.SetName('traeff')
         # gtra.SetTitle('transmission efficiency')
@@ -188,7 +203,7 @@ def main2():
     tra.add('csi_tl_saint_gobaint.dat', 'csitl', 'CsI(Tl) emission', 1., True)
     tra.add('qe_pmt.dat', 'pmt', 'PMT QE', .01)
     tra.calcTra()
-    tra.draw('csi_tl_pmt.png')
+    tra.draw('~/Downloads/csi_tl_pmt.png')
 
 
 def main3():
@@ -201,7 +216,33 @@ def main3():
     tra.draw('csi_tl_zeiss_pco1600.png')
 
 
+def main4():
+    tra = Tra()
+    tra.add('csi_tl_saint_gobaint.dat', 'csitl', 'CsI(Tl) emission', 1., True)
+    tra.add('qe_pmt_r2059.dat', 'pmt', 'PMT R2059 QE', .01)
+    tra.calcTra()
+    tra.draw('~/Downloads/csi_tl_pmt_r2059.png')
+
+
+def main5():
+    tra = Tra()
+    tra.add('nai_tl_leo_1987.dat', 'naitl', 'NaI(Tl) emission', 1., True)
+    tra.add('qe_pmt_r2059.dat', 'pmt', 'PMT R2059 QE', .01)
+    tra.calcTra()
+    tra.draw('~/Downloads/nai_tl_pmt_r2059.png')
+
+
+def main6():
+    tra = Tra()
+    tra.add('nai_tl_leo_1987.dat', 'naitl', 'NaI(Tl) emission', 1., True)
+    tra.add('qe_pmt_xp2282.dat', 'pmt', 'PMT XP2282 QE', .01)
+    tra.calcTra()
+    tra.draw('~/Downloads/nai_tl_pmt_xp2282.png')
+
+
 if __name__ == '__main__':
     # main()
     # main2()
-    main3()
+    # main3()
+    main5()
+    main6()
